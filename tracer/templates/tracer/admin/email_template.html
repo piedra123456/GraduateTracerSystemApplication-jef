@@ -1,12 +1,23 @@
+{% load humanize %}
 {% autoescape off %}
+
+Job Recommendation System
+
 Hello, {{first_name}} {{middle_name}} {{last_name}}
+Your job alert is here!
 
-Please go to the following page set-up your password:
+_______________________________________________________________________________
 
+  Highly recommended!
 
-If you did not make this request, you can simply ignore this email.
+  {{job_title}} | Up to {{job_salary|intcomma}}PHP!
+  {{address_1}}
+  {{company_name}}
 
-Sincerely,
-CTU-Ginatilan Enrollment System
+  Date Posted: {{job_date_created}}
+
+_______________________________________________________________________________
+
+Recommender System
 
 {% endautoescape %}

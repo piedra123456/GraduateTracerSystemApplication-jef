@@ -336,6 +336,8 @@ class User(AbstractBaseUser):
     admin = models.BooleanField(default=False)  # superuser
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    job_sent_list = models.CharField(max_length=5000, null=True)
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
@@ -748,6 +750,7 @@ class Advertise(models.Model):
 
     # Recommender System conditions
     job_sent = models.BooleanField(default=False)
+
 
     # Notif Counter
     job_advertise_notif_counter = models.BooleanField(default=False)

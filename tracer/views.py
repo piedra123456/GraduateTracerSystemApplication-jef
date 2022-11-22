@@ -714,7 +714,7 @@ def PostTimeline(request):
         if form.is_valid():
             form = form.save(commit=False)
             form.author = request.user
-            form.post = post
+            # form.post = post
             form.save()
             messages.success(
                 request, 'Your Post was Successfully Uploaded!')
@@ -1176,7 +1176,6 @@ def display_job_category_notification(request, pk):
 
 
 def advertise(request):
-
     job_categories = JobCategory.objects.all()
     ads = AdvertiseForm()
     add_job_categories = JobCategoryForm()
@@ -1200,43 +1199,72 @@ def advertise(request):
                 job_category = ads.cleaned_data.get('job_category')
                 job_date_created = ads.cleaned_data.get('date_created')
 
+                # Job sending Checker
+                job_sents = Advertise.objects.all().order_by('-id')
+                jobs = ""
+                for job_sent in job_sents:
+                    jobs += str(job_sent.title) + ", "
+                    job_list = [x.strip() for x in jobs.split(',')][:-1]
+                print("Jobs: " + str(jobs))
                 # Users Registered
                 graduates = User.objects.all()
 
                 # Sending mail to graduates
-                for graduate in graduates:
-                    graduate_email_address = graduate.email
-                    associated_users = User.objects.filter(
-                        Q(email=graduate_email_address))
-                    if associated_users.exists():
-                        for user in associated_users:
-                            subject = "Job Recommendation"
-                            email_template_name = "tracer/admin/email_template.html"
-                            email_form = {
-                                "email": user.email,
-                                'first_name': user.first_name,
-                                'middle_name': user.middle_name,
-                                'last_name': user.last_name,
-                                'job_title': job_title,
-                                'job_description': job_description,
-                                'job_salary': job_salary,
-                                'job_category': job_category,
-                                'job_date_created': job_date_created,
-                                'domain': '127.0.0.1:8000',
-                                'site_name': 'CTU Recommender System',
-                                "uid": urlsafe_base64_encode(force_bytes(user.pk)),
-                                "user": user,
-                                'token': default_token_generator.make_token(user),
-                                'protocol': 'http',
-                            }
-                            email = render_to_string(
-                                email_template_name, email_form)
-                            # print("Email sent to:" + email_form.email)
-                            try:
-                                send_mail(subject, email, 'admin@example.com',
-                                          [user.email], fail_silently=False)
-                            except BadHeaderError:
-                                return HttpResponse('Invalid header found.')
+                for user_graduate in graduates:
+                    if user_graduate.graduate:
+                        # for job_sent in job_sents:
+
+                        if user_graduate.job_sent_list != jobs:
+                            if user_graduate.job_sent_list == '' or user_graduate.job_sent_list == None:
+                                user_graduate_job_sent_list = []
+                            else:
+                                user_graduate_job_sent_list = user_graduate.job_sent_list.split(", ")
+                            print(user_graduate_job_sent_list)
+                            for i in range(len(job_sents)):
+                                print("job_sents: "+str(job_sents[i].title))
+                                if job_sents[i].title not in user_graduate_job_sent_list and job_sents[i].title != '':
+                                    user_graduate_job_sent_list.append(job_sents[i].title)
+                                    # print("Graduate " + str(user_graduate) + ": " +str(user_graduate_job_sent_list))
+                                    graduate_email_address = user_graduate.email
+                                    associated_users = User.objects.filter(Q(email=graduate_email_address))
+                                    if associated_users.exists():
+                                        for user in associated_users:
+                                            subject = "Job Recommendation"
+                                            email_template_name = "tracer/admin/email_template.html"
+                                            email_form = {
+                                                "email": user.email,
+                                                'first_name': user.first_name,
+                                                'middle_name': user.middle_name,
+                                                'last_name': user.last_name,
+                                                'company_name': job_sents[i].name,
+                                                'job_title': job_sents[i].title,
+                                                'address_1': job_sents[i].address_1,
+                                                'job_salary': job_sents[i].salary,
+                                                'job_category': job_sents[i].job_category,
+                                                'job_date_created': job_sents[i].date_created,
+                                                'domain': '127.0.0.1:8000',
+                                                'site_name': 'CTU-Ginatilan Recommender System',
+                                                "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                                                "user": user,
+                                                'token': default_token_generator.make_token(user),
+                                                'protocol': 'http',
+                                            }
+                                            email = render_to_string(
+                                                email_template_name, email_form)
+                                            # print("Email sent to:" + email_form.email)
+                                            try:
+                                                send_mail(subject, email, 'admin@example.com',
+                                                        [user.email], fail_silently=False)
+                                            except BadHeaderError:
+                                                return HttpResponse('Invalid header found.')
+                            temp = ""
+                            for i in user_graduate_job_sent_list:
+                                if i != '':
+                                    temp += i + ", "
+                            user_graduate.job_sent_list = temp
+                            user_graduate.save()
+                        else:
+                            print("stop sending the job !!!!!!!!!!")
 
                 return redirect('advertise')
         #Add Job Category
